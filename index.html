@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <title>Daily Routine Reminder | روزانہ روٹین ریمائنڈر</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Inter & Noto Nastaliq/Sans Arabic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+            },
+            accent: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            },
+            dark: {
+              850: '#0f172a',
+              900: '#090d16',
+              950: '#030712'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            urdu: ['"Noto Sans Arabic"', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Neon glow and glass effects */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .neon-border-pulse {
+      animation: neonPulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes neonPulse {
+      0% {
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.4), inset 0 0 10px rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.8);
+      }
+      100% {
+        box-shadow: 0 0 35px rgba(239, 68, 68, 0.9), inset 0 0 20px rgba(239, 68, 68, 0.5);
+        border-color: rgba(255, 99, 99, 1);
+      }
+    }
+    /* Hide scrollbars */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-[#050811] text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white pb-24">
+
+  <!-- ================= ALARM TRIGGER FULLSCREEN MODAL ================= -->
+  <div id="alarmModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+    <div class="glass-panel neon-border-pulse rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden border-2 border-red-500">
+      
+      <div class="w-20 h-20 mx-auto rounded-3xl bg-red-500/20 text-red-400 flex items-center justify-center mb-4 text-4xl shadow-inner border border-red-500/30 animate-bounce">
+        <i class="ph-fill ph-bell-ringing"></i>
+      </div>
+
+      <div class="mb-1">
+        <span class="text-xs uppercase tracking-widest text-red-400 font-extrabold">Time Alert!</span>
+        <div class="text-[13px] font-urdu text-red-300 font-semibold">وقت ہو گیا ہے! دھیان دیں</div>
+      </div>
+
+      <h3 id="alarmTaskTitleEng" class="text-2xl font-black text-white tracking-tight mt-1">Wake Up & Freshen Up</h3>
+      <p id="alarmTaskTitleUrd" class="text-base font-urdu text-sky-300 font-bold mb-1">صبح بیداری اور نماز</p>
+      <div id="alarmTaskTimeBadge" class="inline-block px-3.5 py-1 bg-red-950/80 border border-red-500/40 rounded-xl text-red-200 font-mono font-bold text-sm mb-6">
+        06:00 AM
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex flex-col gap-2.5">
+        <button onclick="stopActiveAlarm()" class="w-full py-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 hover:brightness-110 active:scale-95 transition-all text-white font-bold rounded-2xl shadow-lg shadow-red-600/40 flex flex-col items-center justify-center">
+          <span class="text-sm tracking-wide font-extrabold flex items-center gap-1.5"><i class="ph-bold ph-check text-lg"></i> I AM AWAKE / COMPLETE</span>
+          <span class="text-xs font-urdu font-semibold text-rose-100">بند کریں / میں نے سن لیا</span>
+        </button>
+
+        <button onclick="snoozeActiveAlarm()" class="w-full py-2.5 bg-slate-800/90 hover:bg-slate-700/80 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700 transition">
+          <i class="ph ph-clock-clockwise"></i>
+          <span>Snooze for 5 Minutes</span>
+          <span class="font-urdu text-[11px] text-slate-400">(۵ منٹ بعد دوبارہ)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= TOP APP BAR / HEADER ================= -->
+  <header class="w-full border-b border-slate-800/80 bg-slate-950/70 sticky top-0 z-30 backdrop-blur-md">
+    <div class="max-w-xl mx-auto px-4 py-3 flex items-center justify-between">
+      
+      <!-- Logo & Bilingual Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 text-xl">
+          <i class="ph-fill ph-timer"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+            Daily Routine Reminder
+          </h1>
+          <p class="text-xs font-urdu text-sky-400 font-medium">روزانہ روٹین ریمائنڈر — نظم و ضبط اور کامیابی</p>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls -->
+      <div class="flex items-center gap-2">
+        <button onclick="requestNotificationAccess()" id="notifStatusBtn" title="Notification Permission" class="p-2.5 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition active:scale-95">
+          <i class="ph-bold ph-bell" id="notifIcon"></i>
+        </button>
+        <button onclick="triggerTestAlarm()" class="px-3 py-2 rounded-xl bg-gradient-to-r from-sky-500/10 to-teal-500/10 hover:from-sky-500/20 hover:to-teal-500/20 active:scale-95 text-xs font-bold text-sky-300 border border-sky-500/30 flex flex-col items-center leading-none transition">
+          <span class="flex items-center gap-1"><i class="ph-bold ph-speaker-high text-brand-400"></i> Test Audio</span>
+          <span class="text-[9px] font-urdu text-sky-400/80 mt-0.5">آواز چیک کریں</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN DASHBOARD BODY ================= -->
+  <main class="max-w-xl mx-auto w-full px-4 pt-4 flex-1 flex flex-col gap-4">
+
+    <!-- Live Dual Clock & Next Target Hero Card -->
+    <section class="glass-card rounded-3xl p-5 shadow-2xl relative overflow-hidden border border-slate-800">
+      <div class="absolute -right-8 -top-8 w-36 h-36 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-8 -bottom-8 w-36 h-36 bg-accent-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Current Time</span>
+            <span class="text-xs font-urdu text-slate-400">موجودہ وقت</span>
+          </div>
+          <div id="liveClock" class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 font-mono tracking-tight mt-0.5">--:--:--</div>
+          <div id="liveDate" class="text-xs text-slate-400 mt-1 flex items-center gap-1 font-medium">--</div>
+        </div>
+
+        <!-- Mode pill -->
+        <div class="text-right flex flex-col items-end">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Active Monitor
+          </div>
+          <span class="text-[10px] font-urdu text-emerald-300/80 mt-1">الارم فعال ہے</span>
+        </div>
+      </div>
+
+      <!-- Upcoming Event Highlight -->
+      <div class="mt-4 pt-4 border-t border-slate-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 text-xl shadow-inner">
+            <i class="ph-fill ph-hourglass-high"></i>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1">
+              <span>Next Upcoming Task</span>
+              <span class="font-urdu text-[11px] text-slate-400 font-normal">اگلا کام</span>
+            </div>
+            <div id="nextTaskEng" class="text-sm font-extrabold text-white truncate max-w-[170px] sm:max-w-[230px]">Scanning timetable...</div>
+            <div id="nextTaskUrd" class="text-xs font-urdu text-sky-300 truncate max-w-[170px] sm:max-w-[230px]">شیڈول چیک ہو رہا ہے</div>
+          </div>
+        </div>
+        
+        <div class="flex flex-col items-end">
+          <div id="nextTaskTimeBadge" class="text-xs font-mono font-bold bg-slate-900 text-sky-300 px-3 py-1.5 rounded-xl border border-slate-700/80 shadow">
+            --:--
+          </div>
+          <span id="nextTaskCountdown" class="text-[10px] text-slate-400 mt-1 font-mono">in -- mins</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Progress Bar & Accountability -->
+    <section class="glass-card rounded-2xl p-4 border border-slate-800">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <div class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+            <i class="ph-bold ph-target text-accent-400"></i>
+            <span>Daily Discipline Goal</span>
+          </div>
+          <div class="text-[11px] font-urdu text-slate-400">آج کا ہدف اور تکمیل کی شرح</div>
+        </div>
+        <div class="text-right">
+          <span id="progressPercent" class="text-base font-extrabold text-accent-400 font-mono">0%</span>
+        </div>
+      </div>
+
+      <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-800">
+        <div id="progressBar" class="bg-gradient-to-r from-sky-500 via-teal-400 to-emerald-400 h-full w-0 transition-all duration-500 rounded-full"></div>
+      </div>
+
+      <div class="flex justify-between items-center mt-2.5 text-xs text-slate-400">
+        <span id="completedStats">0 / 0 Completed</span>
+        <button onclick="resetTodayChecklist()" class="text-slate-400 hover:text-sky-300 text-[11px] underline transition flex items-center gap-1">
+          <i class="ph ph-arrow-counter-clockwise"></i> Reset Today (نیا دن)
+        </button>
+      </div>
+    </section>
+
+    <!-- Routine Section Header & Add Task Button -->
+    <div class="flex items-center justify-between pt-1">
+      <div>
+        <h2 class="text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
+          <span>Schedule & Timetable</span>
+        </h2>
+        <p class="text-xs font-urdu text-sky-400/90 font-medium">اپنا روزانہ کا شیڈول اور اوقات</p>
+      </div>
+      
+      <button onclick="openAddModal()" class="px-4 py-2 bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-500 hover:to-cyan-500 active:scale-95 text-white rounded-xl text-xs font-bold flex flex-col items-center shadow-lg shadow-brand-500/25 transition">
+        <span class="flex items-center gap-1"><i class="ph-bold ph-plus text-sm"></i> Add Task</span>
+        <span class="text-[9px] font-urdu text-white/90">نیا کام شامل کریں</span>
+      </button>
+    </div>
+
+    <!-- Routine Tasks Container -->
+    <div id="tasksList" class="flex flex-col gap-3">
+      <!-- Tasks dynamically populated -->
+    </div>
+
+    <!-- Helpful bottom instructions card -->
+    <div class="p-4 rounded-2xl border border-dashed border-slate-800 text-center">
+      <div class="text-xs text-slate-400 mb-1">
+        <i class="ph-fill ph-info text-sky-400 mr-1"></i>
+        <span>Need full reliability on iPhone? Tap Safari Share &gt; <b>Add to Home Screen</b>.</span>
+      </div>
+      <div class="text-[11px] font-urdu text-slate-400">
+        آئی فون پر ہمیشہ فعال رکھنے کے لیے سفاری مینو میں جا کر 'Add to Home Screen' پر کلک کریں۔
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ================= ADD / EDIT TASK MODAL ================= -->
+  <div id="taskModal" class="fixed inset-0 z-40 bg-black/80 backdrop-blur-md hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="glass-panel w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl transition-all border border-slate-700/80">
+      
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 id="modalHeadingEng" class="text-base font-bold text-white">Add New Routine Item</h3>
+          <p id="modalHeadingUrd" class="text-xs font-urdu text-sky-400 font-semibold">نیا کام شیڈول میں شامل کریں</p>
+        </div>
+        <button onclick="closeTaskModal()" class="p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/80">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" onsubmit="handleSaveTask(event)" class="space-y-3.5">
+        <input type="hidden" id="editTaskId" value="">
+
+        <!-- Title English -->
+        <div>
+          <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+            <span>Task Title (English)</span>
+            <span class="font-urdu text-[11px] text-slate-400">کام کا نام انگریزی میں</span>
+          </div>
+          <input type="text" id="taskTitleEngInput" required placeholder="e.g. Deep Work / Skill Learning" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+
+        <!-- Title Urdu -->
+        <div>
+          <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+            <span>Task Title (Urdu / Roman Urdu)</span>
+            <span class="font-urdu text-[11px] text-slate-400">اردو یا رومن اردو میں تفصیل</span>
+          </div>
+          <input type="text" id="taskTitleUrdInput" required placeholder="e.g. کام اور اسکل سیکھنے کا سیشن" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+
+        <!-- Time & Category Row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+              <span>Time</span>
+              <span class="font-urdu text-[11px] text-slate-400">وقت</span>
+            </div>
+            <input type="time" id="taskTimeInput" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <div class="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+              <span>Category</span>
+              <span class="font-urdu text-[11px] text-slate-400">قسم</span>
+            </div>
+            <select id="taskCategorySelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500">
+              <option value="spirit">Ibadat / نماز و عبادت</option>
+              <option value="work">Work / کام اور اسٹڈی</option>
+              <option value="health">Fitness / ورزش اور کھانا</option>
+              <option value="sleep">Sleep / سونا اور آرام</option>
+              <option value="misc">General / دیگر معمولات</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Alarm Switch -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
+              <i class="ph-bold ph-bell-ringing"></i>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-white">Loud Sound Alarm</div>
+              <div class="text-[11px] font-urdu text-amber-400/90 font-medium">اس وقت پر تیز الارم بجائے</div>
+            </div>
+          </div>
+          <input type="checkbox" id="taskAlarmEnabled" checked class="w-5 h-5 accent-brand-500 rounded cursor-pointer">
+        </div>
+
+        <!-- Modal Submit Buttons -->
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" onclick="closeTaskModal()" class="w-1/2 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition flex flex-col items-center">
+            <span>Cancel</span>
+            <span class="text-[10px] font-urdu font-normal text-slate-400">کینسل کریں</span>
+          </button>
+          <button type="submit" class="w-1/2 py-3 bg-gradient-to-r from-brand-600 to-cyan-600 hover:brightness-110 active:scale-95 rounded-xl text-xs font-extrabold text-white shadow-lg shadow-brand-500/25 transition flex flex-col items-center">
+            <span>Save Reminder</span>
+            <span class="text-[10px] font-urdu font-semibold text-white/90">محفوظ کریں</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    /* 1. STATE & STORAGE */
+    const STORAGE_KEY = 'daily_routine_reminder_tasks_v2';
+    const CHECKLIST_KEY = 'daily_routine_reminder_checks_v2';
+
+    // Professional bilingual pre-filled timetable
+    const DEFAULT_ROUTINE = [
+      { id: '1', time: '05:30', titleEng: 'Wake Up & Fajr Prayer', titleUrd: 'صبح بیداری اور فجر کی نماز', category: 'spirit', alarm: true },
+      { id: '2', time: '06:30', titleEng: 'Morning Exercise & Walk', titleUrd: 'ورزش، جاگنگ اور تازہ ہوا', category: 'health', alarm: true },
+      { id: '3', time: '07:45', titleEng: 'Healthy Breakfast & Shower', titleUrd: 'ناشتہ اور نہانا (Fresh Start)', category: 'health', alarm: true },
+      { id: '4', time: '08:45', titleEng: 'Focused Work Session 1', titleUrd: 'کام اور بزنس کا پہلا فوکس سیشن', category: 'work', alarm: true },
+      { id: '5', time: '13:15', titleEng: 'Zuhr Prayer & Healthy Lunch', titleUrd: 'ظہر کی نماز اور دوپہر کا کھانا', category: 'spirit', alarm: true },
+      { id: '6', time: '14:30', titleEng: 'Focused Work Session 2', titleUrd: 'کام، اسکل لرننگ یا پڑھائی سیشن 2', category: 'work', alarm: true },
+      { id: '7', time: '17:30', titleEng: 'Asr Prayer & Family / Walk', titleUrd: 'عصر کی نماز اور چہل قدمی', category: 'misc', alarm: true },
+      { id: '8', time: '20:15', titleEng: 'Dinner & Relaxation', titleUrd: 'رات کا ہلکا کھانا اور ریلیکس', category: 'health', alarm: true },
+      { id: '9', time: '21:30', titleEng: 'Isha Prayer & Tomorrow Planning', titleUrd: 'عشاء کی نماز اور اگلے دن کی پلاننگ', category: 'spirit', alarm: true },
+      { id: '10', time: '22:30', titleEng: 'Screen Off & Deep Sleep', titleUrd: 'موبائل بند اور پرسکون نیند', category: 'sleep', alarm: true },
+    ];
+
+    let routine = [];
+    let completedMap = {};
+    let lastCheckedMinute = "";
+    let audioCtx = null;
+    let alarmLoopId = null;
+
+    const categoryThemes = {
+      spirit: { labelEng: 'Faith', labelUrd: 'عبادت', color: 'border-amber-500/40 bg-amber-500/10 text-amber-300', icon: 'ph-hands-praying' },
+      work: { labelEng: 'Focus / Work', labelUrd: 'کام', color: 'border-sky-500/40 bg-sky-500/10 text-sky-300', icon: 'ph-briefcase' },
+      health: { labelEng: 'Health', labelUrd: 'صحت', color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300', icon: 'ph-heartbeat' },
+      sleep: { labelEng: 'Sleep', labelUrd: 'نیند', color: 'border-purple-500/40 bg-purple-500/10 text-purple-300', icon: 'ph-moon-stars' },
+      misc: { labelEng: 'Routine', labelUrd: 'معمول', color: 'border-slate-500/40 bg-slate-500/10 text-slate-300', icon: 'ph-clock' }
+    };
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        routine = saved ? JSON.parse(saved) : [...DEFAULT_ROUTINE];
+        const savedChecks = localStorage.getItem(CHECKLIST_KEY);
+        completedMap = savedChecks ? JSON.parse(savedChecks) : {};
+      } catch (e) {
+        routine = [...DEFAULT_ROUTINE];
+        completedMap = {};
+      }
+    }
+
+    function saveTasks() {
+      routine.sort((a, b) => a.time.localeCompare(b.time));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(routine));
+    }
+
+    function saveChecks() {
+      localStorage.setItem(CHECKLIST_KEY, JSON.stringify(completedMap));
+    }
+
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    }
+
+    /* 2. OFFLINE LOUD WEB AUDIO SYNTHESIZER */
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, startOffset, duration) {
+      try {
+        const ctx = initAudio();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startOffset);
+
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + startOffset);
+        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + startOffset + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startOffset + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + startOffset);
+        osc.stop(ctx.currentTime + startOffset + duration);
+      } catch (err) {
+        console.warn('Audio API:', err);
+      }
+    }
+
+    function playMultiBeepAlarm() {
+      // 3 assertive alarm beeps repeated
+      playTone(880, 0.00, 0.15); // High beep
+      playTone(880, 0.20, 0.15);
+      playTone(1174, 0.40, 0.35); // Peak accent note
+    }
+
+    function startLoudAlarm(task) {
+      document.getElementById('alarmTaskTitleEng').innerText = task.titleEng;
+      document.getElementById('alarmTaskTitleUrd').innerText = task.titleUrd;
+      document.getElementById('alarmTaskTimeBadge').innerText = format12Hour(task.time);
+      document.getElementById('alarmModal').classList.remove('hidden');
+
+      if ('vibrate' in navigator) {
+        navigator.vibrate([500, 250, 500, 250, 700]);
+      }
+
+      playMultiBeepAlarm();
+      if (alarmLoopId) clearInterval(alarmLoopId);
+      alarmLoopId = setInterval(playMultiBeepAlarm, 1500);
+    }
+
+    function stopActiveAlarm() {
+      if (alarmLoopId) {
+        clearInterval(alarmLoopId);
+        alarmLoopId = null;
+      }
+      document.getElementById('alarmModal').classList.add('hidden');
+    }
+
+    function snoozeActiveAlarm() {
+      stopActiveAlarm();
+      const current = new Date();
+      current.setMinutes(current.getMinutes() + 5);
+      const hh = String(current.getHours()).padStart(2, '0');
+      const mm = String(current.getMinutes()).padStart(2, '0');
+      routine.push({
+        id: 'snooze_' + Date.now(),
+        time: `${hh}:${mm}`,
+        titleEng: 'Snoozed Task',
+        titleUrd: 'ملتوی شدہ کام (5 منٹ مکمل)',
+        category: 'misc',
+        alarm: true
+      });
+      saveTasks();
+      renderTasks();
+    }
+
+    function triggerTestAlarm() {
+      initAudio();
+      startLoudAlarm({
+        titleEng: "Test Alarm & Audio System",
+        titleUrd: "آواز اور الارم بالکل ٹھیک کام کر رہا ہے!",
+        time: getCurrentHHMM()
+      });
+      sendPush("Daily Routine Reminder", "Audio and notifications are functioning properly!");
+    }
+
+    /* 3. TIME HELPERS & CLOCK */
+    function format12Hour(time24) {
+      if (!time24) return '--:--';
+      const [hStr, mStr] = time24.split(':');
+      let h = parseInt(hStr, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      return `${h}:${mStr} ${ampm}`;
+    }
+
+    function getCurrentHHMM() {
+      const d = new Date();
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      const currentMinute = `${hh}:${mm}`;
+
+      document.getElementById('liveClock').innerText = `${hh}:${mm}:${ss}`;
+
+      const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('liveDate').innerHTML = `
+        <span>${now.toLocaleDateString('en-US', options)}</span>
+        <span class="text-slate-500">•</span>
+        <span class="font-urdu text-sky-400 font-semibold">${now.toLocaleDateString('ur-PK-u-nu-latn', { weekday: 'long' })}</span>
+      `;
+
+      // Check Alarms
+      if (lastCheckedMinute !== currentMinute) {
+        triggerScheduledAlarms(currentMinute);
+        lastCheckedMinute = currentMinute;
+      }
+
+      // Update next task countdown
+      updateNextTaskCard(currentMinute, now);
+    }
+
+    function triggerScheduledAlarms(currentMinute) {
+      const matched = routine.filter(t => t.time === currentMinute && t.alarm);
+      matched.forEach(task => {
+        startLoudAlarm(task);
+        sendPush(`Reminder: ${task.titleEng}`, `${task.titleUrd} - Time: ${format12Hour(task.time)}`);
+      });
+    }
+
+    function updateNextTaskCard(currentMinute, now) {
+      if (routine.length === 0) {
+        document.getElementById('nextTaskEng').innerText = "No Tasks Added";
+        document.getElementById('nextTaskUrd').innerText = "کوئی کام موجود نہیں";
+        document.getElementById('nextTaskTimeBadge').innerText = "--:--";
+        document.getElementById('nextTaskCountdown').innerText = "";
+        return;
+      }
+
+      let next = routine.find(t => t.time > currentMinute);
+      let isTomorrow = false;
+      if (!next) {
+        next = routine[0];
+        isTomorrow = true;
+      }
+
+      document.getElementById('nextTaskEng').innerText = next.titleEng;
+      document.getElementById('nextTaskUrd').innerText = next.titleUrd;
+      document.getElementById('nextTaskTimeBadge').innerText = format12Hour(next.time);
+
+      // Countdown in minutes
+      const [nH, nM] = next.time.split(':').map(Number);
+      const targetDate = new Date(now);
+      targetDate.setHours(nH, nM, 0, 0);
+      if (isTomorrow) targetDate.setDate(targetDate.getDate() + 1);
+
+      const diffMins = Math.max(0, Math.round((targetDate - now) / 60000));
+      document.getElementById('nextTaskCountdown').innerText = isTomorrow 
+        ? `tomorrow (${diffMins}m)` 
+        : `in ${diffMins} min${diffMins === 1 ? '' : 's'}`;
+    }
+
+    /* 4. NOTIFICATIONS */
+    function checkNotificationStatus() {
+      const notifBtn = document.getElementById('notifStatusBtn');
+      const icon = document.getElementById('notifIcon');
+      if (!("Notification" in window)) {
+        notifBtn.classList.add('hidden');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        icon.className = "ph-fill ph-bell-simple-slash text-accent-400";
+        notifBtn.title = "Notifications Active / فعال ہیں";
+      } else if (Notification.permission === 'denied') {
+        icon.className = "ph-bold ph-bell-slash text-red-400";
+        notifBtn.title = "Notifications Blocked / بلاکڈ";
+      } else {
+        icon.className = "ph-bold ph-bell text-amber-400";
+      }
+    }
+
+    function requestNotificationAccess() {
+      initAudio();
+      if (!("Notification" in window)) return;
+      Notification.requestPermission().then(permission => {
+        checkNotificationStatus();
+        if (permission === 'granted') {
+          sendPush("Daily Routine Reminder", "Alerts are now enabled! / نوٹیفکیشن آن ہو گئی ہے");
+        }
+      });
+    }
+
+    function sendPush(title, body) {
+      if (!("Notification" in window) || Notification.permission !== "granted") return;
+      try {
+        new Notification(title, { body, silent: false });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    /* 5. RENDER ROUTINE LIST */
+    function renderTasks() {
+      const container = document.getElementById('tasksList');
+      const today = getTodayKey();
+
+      if (routine.length === 0) {
+        container.innerHTML = `
+          <div class="glass-panel text-center py-10 px-4 rounded-3xl border border-dashed border-slate-800">
+            <i class="ph ph-calendar-blank text-3xl text-slate-500 mb-2"></i>
+            <div class="text-sm font-bold text-slate-300">Timetable is Empty</div>
+            <div class="text-xs font-urdu text-slate-400 mb-3">کوئی کام شامل نہیں ہے</div>
+            <button onclick="restoreDefaults()" class="px-4 py-2 bg-brand-600 rounded-xl text-xs font-bold text-white shadow">
+              Restore Recommended Schedule
+            </button>
+          </div>
+        `;
+        updateProgress();
+        return;
+      }
+
+      let html = '';
+      routine.forEach(task => {
+        const isDone = completedMap[task.id] === today;
+        const theme = categoryThemes[task.category] || categoryThemes.misc;
+
+        html += `
+          <div class="glass-panel p-3.5 sm:p-4 rounded-2xl flex items-center justify-between border ${isDone ? 'border-slate-800/60 opacity-60' : 'border-slate-800'} transition hover:border-slate-700">
+            
+            <!-- Left: Checkbox & Bilingual Title -->
+            <div class="flex items-center gap-3 min-w-0">
+              <button onclick="toggleCheck('${task.id}')" class="w-6 h-6 rounded-lg border ${isDone ? 'bg-accent-500 border-accent-500 text-white shadow-md shadow-accent-500/20' : 'border-slate-700 bg-slate-800/80 text-transparent'} flex-shrink-0 flex items-center justify-center transition active:scale-90">
+                <i class="ph-bold ph-check text-xs"></i>
+              </button>
+
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono font-bold text-sky-400">${format12Hour(task.time)}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full border ${theme.color} font-bold flex items-center gap-1 leading-none">
+                    <i class="ph ${theme.icon}"></i> ${theme.labelEng} / ${theme.labelUrd}
+                  </span>
+                </div>
+                <div class="text-sm font-extrabold ${isDone ? 'line-through text-slate-500' : 'text-slate-100'} truncate mt-0.5">${task.titleEng}</div>
+                <div class="text-xs font-urdu font-semibold ${isDone ? 'line-through text-slate-600' : 'text-sky-300/90'} truncate">${task.titleUrd}</div>
+              </div>
+            </div>
+
+            <!-- Right: Alarm switch & Edit/Delete -->
+            <div class="flex items-center gap-1 pl-2 flex-shrink-0">
+              <button onclick="toggleAlarm('${task.id}')" title="Toggle Alarm" class="p-2 rounded-xl text-xs transition ${task.alarm ? 'text-amber-400 hover:bg-amber-500/10' : 'text-slate-600 hover:text-slate-400'}">
+                <i class="ph-fill ${task.alarm ? 'ph-bell-ringing' : 'ph-bell-slash'} text-lg"></i>
+              </button>
+
+              <button onclick="openEditModal('${task.id}')" title="Edit" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/80 transition">
+                <i class="ph ph-pencil-simple text-base"></i>
+              </button>
+
+              <button onclick="deleteTask('${task.id}')" title="Delete" class="p-2 text-slate-500 hover:text-rose-400 rounded-xl hover:bg-slate-800/80 transition">
+                <i class="ph ph-trash text-base"></i>
+              </button>
+            </div>
+
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      updateProgress();
+    }
+
+    function toggleCheck(id) {
+      initAudio();
+      const today = getTodayKey();
+      if (completedMap[id] === today) {
+        delete completedMap[id];
+      } else {
+        completedMap[id] = today;
+        playTone(987.77, 0, 0.15); // pleasant completion chirp
+      }
+      saveChecks();
+      renderTasks();
+    }
+
+    function toggleAlarm(id) {
+      routine = routine.map(t => t.id === id ? { ...t, alarm: !t.alarm } : t);
+      saveTasks();
+      renderTasks();
+    }
+
+    function deleteTask(id) {
+      routine = routine.filter(t => t.id !== id);
+      delete completedMap[id];
+      saveTasks();
+      saveChecks();
+      renderTasks();
+    }
+
+    function updateProgress() {
+      const total = routine.length;
+      if (total === 0) {
+        document.getElementById('progressPercent').innerText = '0%';
+        document.getElementById('progressBar').style.width = '0%';
+        document.getElementById('completedStats').innerText = '0 / 0 Completed';
+        return;
+      }
+
+      const today = getTodayKey();
+      const done = routine.filter(t => completedMap[t.id] === today).length;
+      const pct = Math.round((done / total) * 100);
+
+      document.getElementById('progressPercent').innerText = `${pct}%`;
+      document.getElementById('progressBar').style.width = `${pct}%`;
+      document.getElementById('completedStats').innerText = `${done} of ${total} Done (${total - done} Left)`;
+    }
+
+    function resetTodayChecklist() {
+      completedMap = {};
+      saveChecks();
+      renderTasks();
+    }
+
+    function restoreDefaults() {
+      routine = JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+      saveTasks();
+      renderTasks();
+    }
+
+    /* 6. MODALS */
+    function openAddModal() {
+      initAudio();
+      document.getElementById('modalHeadingEng').innerText = "Add New Routine Item";
+      document.getElementById('modalHeadingUrd').innerText = "نیا کام شیڈول میں شامل کریں";
+      document.getElementById('editTaskId').value = "";
+      document.getElementById('taskTitleEngInput').value = "";
+      document.getElementById('taskTitleUrdInput').value = "";
+      document.getElementById('taskTimeInput').value = getCurrentHHMM();
+      document.getElementById('taskCategorySelect').value = "work";
+      document.getElementById('taskAlarmEnabled').checked = true;
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function openEditModal(id) {
+      const t = routine.find(x => x.id === id);
+      if (!t) return;
+      document.getElementById('modalHeadingEng').innerText = "Edit Routine Item";
+      document.getElementById('modalHeadingUrd').innerText = "کام میں ترمیم کریں";
+      document.getElementById('editTaskId').value = t.id;
+      document.getElementById('taskTitleEngInput').value = t.titleEng;
+      document.getElementById('taskTitleUrdInput').value = t.titleUrd;
+      document.getElementById('taskTimeInput').value = t.time;
+      document.getElementById('taskCategorySelect').value = t.category || 'work';
+      document.getElementById('taskAlarmEnabled').checked = t.alarm !== false;
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.add('hidden');
+    }
+
+    function handleSaveTask(e) {
+      e.preventDefault();
+      initAudio();
+      const id = document.getElementById('editTaskId').value;
+      const titleEng = document.getElementById('taskTitleEngInput').value.trim();
+      const titleUrd = document.getElementById('taskTitleUrdInput').value.trim();
+      const time = document.getElementById('taskTimeInput').value;
+      const category = document.getElementById('taskCategorySelect').value;
+      const alarm = document.getElementById('taskAlarmEnabled').checked;
+
+      if (!titleEng || !time) return;
+
+      if (id) {
+        routine = routine.map(t => t.id === id ? { ...t, titleEng, titleUrd, time, category, alarm } : t);
+      } else {
+        routine.push({
+          id: 'task_' + Date.now(),
+          titleEng,
+          titleUrd,
+          time,
+          category,
+          alarm
+        });
+      }
+
+      saveTasks();
+      renderTasks();
+      closeTaskModal();
+    }
+
+    /* 7. INITIALIZE */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      renderTasks();
+      updateClock();
+      checkNotificationStatus();
+      setInterval(updateClock, 1000);
+
+      // Pre-warm audio on mobile tap
+      document.body.addEventListener('click', () => {
+        initAudio();
+      }, { once: true });
+    });
+  </script>
+</body>
+</html>
